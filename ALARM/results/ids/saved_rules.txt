@@ -14,3 +14,11 @@ For 7 clusters, cluster index 4 is selected.
 Feature flow_duration between: 4401770.451 and 8114147.940.Feature ece_flag_cnt between: 1.000 and 1.000.Feature active_std between: 0.000 and 3338.049.Feature pkt_len_mean between: 277.550 and 299.833.Feature bwd_iat_max between: 6808133.737 and 8215098.364.Feature idle_mean between: 30000000.000 and 78000000.000.
 Current COVERAGE: 0.000, Current PURITY:1.000. 
 
+For 7 clusters, cluster index 0 is selected. 
+Feature idle_std between: 0.000 and 35886100.000.
+Current COVERAGE: 1.000, Current PURITY:0.005. 
+
+For 7 clusters, cluster index 0 is selected. 
+Feature active_mean between: 61000000.000 and 82690208.000.Feature active_mean between: 0.000 and 22000000.000.
+Current COVERAGE: 0.000, Current PURITY:0.000. 
+

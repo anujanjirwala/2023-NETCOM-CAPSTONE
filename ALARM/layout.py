@@ -273,7 +273,7 @@ def layout(DASHBOARD_DATA):
                             ),
                             html.Div(
                                 [
-                                    "Feature Number: ",
+                                    "Features: ",
                                     dcc.Dropdown(
                                         options=[
                                             {"label": i, "value": i}

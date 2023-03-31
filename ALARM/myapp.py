@@ -374,13 +374,17 @@ def update_lookout(selected_k, cluster_number, budget):
     Output(component_id="rules_slider", component_property="children"),
     Input(component_id="submit-val", component_property="n_clicks"),
     Input({"type": "dynamic-button", "index": dash.ALL}, "n_clicks"),
+    Input({"type": "dynamic-or-button", "index": dash.ALL}, "n_clicks"),
     Input(component_id="feature_dropdown", component_property="value"),
     State("rules_slider", "children"),
 )
-def update_rules(feature1, feature2, selected_rule, children):
+def update_rules(feature1, feature2,feature3, selected_rule, children):
     trigger = callback_context.triggered[0]
     if trigger["prop_id"] != "submit-val.n_clicks":
-        if "," in trigger["prop_id"]:         
+        #print(trigger["prop_id"])
+        button_type = trigger["prop_id"].split(",")[1].split(":")[1].replace('"', "")
+       #print("button_type:" + button_type)
+        if "dynamic-button" in button_type:         
             idx_str = trigger["prop_id"].split(",")[0]
             if ":"  in idx_str:
                 idx = idx_str.split(":")[1].replace('"', "")
@@ -392,6 +396,21 @@ def update_rules(feature1, feature2, selected_rule, children):
                 children = new_children
                 #print("new children")
                 #print(new_children)
+        elif "dynamic-or-button" in button_type:
+            index = trigger["prop_id"].split(",")[0].split(":")[1].replace('"', "")
+            for child in children:
+                if child["props"]["children"][0]["props"]["children"][1]["props"]["id"]["index"] == index:
+                    feature_name = child["props"]["children"][0]["props"]["children"][0]
+            feature_min = round(
+            DASHBOARD_DATA.exploration_data[index].min(axis=0), 4
+            )
+            feature_max = round(
+            DASHBOARD_DATA.exploration_data[index].max(axis=0), 4
+            )
+            children.append(
+            rule_slider_maker(
+                index, feature_min, feature_max, feature_min, feature_max)
+            )
     
     else:
 
@@ -669,7 +688,7 @@ def update_rule_candidates1(feature1, feature2, children1, children2):
         return children2
 
 
-def rule_slider_maker(name, min_val, max_val, start, end):
+def rule_slider_maker(name, min_val, max_val, start, end, wide = 3):
     return dbc.Row(
         [
             dbc.Col(
@@ -680,8 +699,13 @@ def rule_slider_maker(name, min_val, max_val, start, end):
                         id={"type": "dynamic-button", "index": name.replace(" ", "")},
                         n_clicks=0,
                     ),
+                     html.Button(
+                        "Or",
+                        id={"type": "dynamic-or-button", "index": name.replace(" ", "")},
+                        n_clicks=0,
+                    ),
                 ],
-                width=3,
+                width=wide,
             ),
             dcc.RangeSlider(
                 min_val,
