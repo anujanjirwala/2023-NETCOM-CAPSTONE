@@ -290,6 +290,11 @@ def layout(DASHBOARD_DATA):
                                 ]
                             ),
                             html.Button("Add Predicates", id="submit-val", n_clicks=0),
+                            html.Button(
+                                            "Or",
+                                            id={"type": "dynamic-or-button", "index": "feature_dropdown"},
+                                            n_clicks=0,
+                                        ),
                             html.Div(id="rules_slider", children=[]),
                             html.Button(
                                 "Calculate Scores", id="score_button", n_clicks=0),

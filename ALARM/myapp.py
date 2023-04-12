@@ -21,13 +21,13 @@ from copy import deepcopy
 from myapp import *
 from layout import layout
 from copy import deepcopy
-
+from collections import defaultdict
 from utils import preprocess, utils
 import sys
 sys.path.append("xpacs_offline")
 from xpacs import *
 
-
+idx = 0
 
 class Parameters():
     def __init__(self, 
@@ -378,61 +378,58 @@ def update_lookout(selected_k, cluster_number, budget):
     Input(component_id="feature_dropdown", component_property="value"),
     State("rules_slider", "children"),
 )
-def update_rules(feature1, feature2,feature3, selected_rule, children):
+def update_rules(feature1, feature2, feature3, selected_rule, children):
+    global idx
     trigger = callback_context.triggered[0]
     if trigger["prop_id"] != "submit-val.n_clicks":
-        #print(trigger["prop_id"])
-        button_type = trigger["prop_id"].split(",")[1].split(":")[1].replace('"', "")
-       #print("button_type:" + button_type)
-        if "dynamic-button" in button_type:         
+        try:
+            button_type = trigger["prop_id"].split(",")[1].split(":")[1].replace('"', "")
+        except IndexError:
+            button_type = ""
+
+        if "dynamic-button" in button_type:
             idx_str = trigger["prop_id"].split(",")[0]
-            if ":"  in idx_str:
-                idx = idx_str.split(":")[1].replace('"', "")
+            if ":" in idx_str:
+                idx = int(idx_str.split(":")[1].replace('"', ""))
                 new_children = []
                 for child in children:
-                    #print(child["props"]["children"][0]["props"]["children"][0].replace(" ",""))
-                    if child["props"]["children"][0]["props"]["children"][0].replace(" ","") != idx:
+                    if child["props"].get("id") and child["props"]["id"]["index"] != idx:
                         new_children.append(child)
                 children = new_children
-                #print("new children")
-                #print(new_children)
         elif "dynamic-or-button" in button_type:
-            index = trigger["prop_id"].split(",")[0].split(":")[1].replace('"', "")
-            for child in children:
-                if child["props"]["children"][0]["props"]["children"][1]["props"]["id"]["index"] == index:
-                    feature_name = child["props"]["children"][0]["props"]["children"][0]
-            feature_min = round(
-            DASHBOARD_DATA.exploration_data[index].min(axis=0), 4
-            )
-            feature_max = round(
-            DASHBOARD_DATA.exploration_data[index].max(axis=0), 4
-            )
-            children.append(
-            rule_slider_maker(
-                index, feature_min, feature_max, feature_min, feature_max)
-            )
+            # Add slider with incremented index
+            idx += 1
+            # Add this block to handle the new "Or" button functionality
+            if selected_rule not in cat_dim_lst:
+                feature_min = round(
+                    DASHBOARD_DATA.exploration_data[selected_rule].min(axis=0), 4
+                )
+                feature_max = round(
+                    DASHBOARD_DATA.exploration_data[selected_rule].max(axis=0), 4
+                )
+                children.append(
+                    rule_slider_maker(selected_rule, feature_min, feature_max, feature_min, feature_max, idx)
+                )
+            else:
+                all_vals = list(DASHBOARD_DATA.exploration_data[selected_rule].unique())
+                children.append(rule_dropdown_maker(selected_rule, all_vals[0], all_vals))
     
     else:
-
+        idx += 1
+        # Check if the feature is categorical/binary or continuous and add appropriate control
         if selected_rule not in cat_dim_lst:
             feature_min = round(
-            DASHBOARD_DATA.exploration_data[selected_rule].min(axis=0), 4
+                DASHBOARD_DATA.exploration_data[selected_rule].min(axis=0), 4
             )
             feature_max = round(
-            DASHBOARD_DATA.exploration_data[selected_rule].max(axis=0), 4
+                DASHBOARD_DATA.exploration_data[selected_rule].max(axis=0), 4
             )
-            children.append(
-            rule_slider_maker(
-                selected_rule, feature_min, feature_max, feature_min, feature_max)
-            )
+            children.append(rule_slider_maker(selected_rule, feature_min, feature_max, feature_min, feature_max, idx))
         else:
             all_vals = list(DASHBOARD_DATA.exploration_data[selected_rule].unique())
-            children.append(
-            rule_dropdown_maker(selected_rule, all_vals[0], all_vals)
-            )
-    #print("final children")
-    #print(children)
+            children.append(rule_dropdown_maker(selected_rule, all_vals[0], all_vals))
     return children
+
 
 
 """
@@ -464,32 +461,29 @@ def calculate_scores(n_clicks, rules_slider, selected_rules, group_num, cluster_
     del group0_anomaly['index']
     normal_X = pd.read_csv('xpacs_offline/results/%s/normal_data.txt' % dataset_name)
     combined_rules = []
-    
-    for child in selected_rules:
-        feat = (child["props"]["children"][0]["props"]["children"][0].replace(" ", ""))
-        id = FEAT_NAME.index(feat)
-        interval = child["props"]["children"][1]["props"]["value"]
-        if type(interval) == list:
-            combined_rules.append((id, (interval[0], interval[1])))
-        else:
-            combined_rules.append((id, (interval, interval)))
-    
-    #print("combined_rules")
-    #print(combined_rules)     
-   
-    #print("rule_slider")
+
+    combined_rules_dict = {}
+
     for child in rules_slider:
         #print(child)
         feat = (child["props"]["children"][0]["props"]["children"][0].replace(" ", ""))
         id = FEAT_NAME.index(feat)
         interval = child["props"]["children"][1]["props"]["value"]
-        if type(interval) == list:
-            combined_rules.append((id, (interval[0], interval[1])))
+
+        if id not in combined_rules_dict:
+            combined_rules_dict[id] = [interval]
         else:
-            combined_rules.append((id, (interval, interval)))
-    #print("total rules!")
-    #print(combined_rules)
-    combined_rules = remove_redundant_candidates(combined_rules)
+            combined_rules_dict[id].append(interval)
+
+    combined_rules = [(key, *value) for key, value in combined_rules_dict.items()]
+
+    print("rules_slider")
+    print(rules_slider)  
+
+    print("total rules!")
+    print(combined_rules)
+    print("after remove redundant")
+    print(combined_rules)
     (mass, purity) = get_mass_purity(group0_anomaly, normal_X, combined_rules,FEAT_NAME,cat_dim_lst)
     return html.Div("Current COVERAGE: %.3f, Current PURITY:%.3f " % (mass, purity))
 
@@ -688,28 +682,24 @@ def update_rule_candidates1(feature1, feature2, children1, children2):
         return children2
 
 
-def rule_slider_maker(name, min_val, max_val, start, end, wide = 3):
+def rule_slider_maker(name, min_val, max_val, start, end, idx, wide=3):
     return dbc.Row(
-        [
+        id={"type": "dynamic-row", "index": idx},
+        children=[
             dbc.Col(
                 [
                     name + " ",
                     html.Button(
                         "Delete",
-                        id={"type": "dynamic-button", "index": name.replace(" ", "")},
-                        n_clicks=0,
-                    ),
-                     html.Button(
-                        "Or",
-                        id={"type": "dynamic-or-button", "index": name.replace(" ", "")},
+                        id={"type": "dynamic-button", "index": idx},
                         n_clicks=0,
                     ),
                 ],
                 width=wide,
             ),
             dcc.RangeSlider(
-                min_val,
-                max_val,
+                min=min_val,
+                max=max_val,
                 value=[start, end],
                 marks={
                     min_val: "{:.3f}".format(min_val),
@@ -717,10 +707,55 @@ def rule_slider_maker(name, min_val, max_val, start, end, wide = 3):
                     end: str(end),
                     max_val: "{:.3f}".format(max_val),
                 },
-                id={"type": "dynamic-slider", "index": name.replace(" ", "")},
+                id={"type": "dynamic-slider", "index": idx},
+                className=name,
+            ),
+            dbc.Col(
+                [
+                    html.Span("Lower limit: "),
+                    dcc.Input(
+                        id={"type": "dynamic-lower-input", "index": idx},
+                        type="number",
+                        value=start,
+                        min=min_val,
+                        max=end,
+                    ),
+                    html.Span("Upper limit: "),
+                    dcc.Input(
+                        id={"type": "dynamic-upper-input", "index": idx},
+                        type="number",
+                        value=end,
+                        min=start,
+                        max=max_val,
+                    ),
+                ],
+                width=wide,
             ),
         ]
     )
+# Callback function to update bounds
+@app.callback(
+    [
+        Output({"type": "dynamic-lower-input", "index": dash.ALL}, "max"),
+        Output({"type": "dynamic-upper-input", "index": dash.ALL}, "min"),
+    ],
+    [
+        Input({"type": "dynamic-lower-input", "index": dash.ALL}, "value"),
+        Input({"type": "dynamic-upper-input", "index": dash.ALL}, "value"),
+    ],
+)
+def update_bounds(lower_values, upper_values):
+    return upper_values, lower_values
+
+@app.callback(
+    Output({"type": "dynamic-slider", "index": dash.MATCH}, "value"),
+    Input({"type": "dynamic-lower-input", "index": dash.MATCH}, "value"),
+    Input({"type": "dynamic-upper-input", "index": dash.MATCH}, "value"),
+)
+def update_slider_from_input(lower_limit, upper_limit):
+    if lower_limit is None or upper_limit is None:
+        raise dash.exceptions.PreventUpdate
+    return [lower_limit, upper_limit]
 
 
 def rule_dropdown_maker(name, selected_val, all_vals):
@@ -754,38 +789,45 @@ def rule_dropdown_maker(name, selected_val, all_vals):
     )
 
 
+
+
 @app.callback(
     Output("output-container-range-slider", "children"),
-    Input({"type": "dynamic-slider","index": dash.ALL}, "id"), 
     Input({"type": "dynamic-slider", "index": dash.ALL}, "value"),
-    Input({"type": "dynamic-dropdown","index": dash.ALL}, "id"), 
-    Input({"type": "dynamic-dropdown","index": dash.ALL}, "value"),
-  
+    Input({"type": "dynamic-dropdown", "index": dash.ALL}, "value"),
+    State({"type": "dynamic-slider", "index": dash.ALL}, "id"),
+    State({"type": "dynamic-slider", "index": dash.ALL}, "className"),
+    State({"type": "dynamic-dropdown", "index": dash.ALL}, "id"),
 )
-def update_output(feat1,value1,feat2, value2,):
-    updated_str = ""
-    
-    #print real-valued features and values
-    for i in range(len(value1)):
-        rule_str = "Feature "
-        feature  =  feat1[i]["index"].upper()
-        #print(feature)
-        new_rul = " between: %.3f and %.3f." % (value1[i][0], value1[i][1])
-        rule_str = rule_str + feature + new_rul
-        updated_str = updated_str + rule_str
-      
-    #print categorical features and values
-    for i in range(len(value2)):
-        rule_str = "Feature "
-        feature = feat2[i]["index"].upper()
-        #print(feature)
-        new_rul = " is: %s." % value2[i]
-        rule_str = rule_str + feature + new_rul
-        updated_str = updated_str + rule_str
-        
-    return 'You have selected: "' + updated_str + '"'
 
-    # callbacks
+
+def update_output(slider_values, dropdown_values, slider_ids, slider_names, dropdown_ids):
+    rule_components = []
+    rule_dict = defaultdict(list)
+
+    # Group real-valued features and values
+    for slider_id, slider_value, slider_name in zip(slider_ids, slider_values, slider_names):
+        rule_dict[slider_name].append("between: %.3f and %.3f" % (slider_value[0], slider_value[1]))
+
+    # Group categorical features and values
+    for dropdown_id, dropdown_value in zip(dropdown_ids, dropdown_values):
+        feature = dropdown_id["index"].replace(" ", "")
+        rule_dict[feature].append("is: %s" % dropdown_value)
+
+    # Combine the rules with "or"
+    for feature, rules in rule_dict.items():
+        rule_str = "Feature " + feature + " " + " or ".join(rules) + "."
+        rule_components.append(html.Span(rule_str, style={"color": "red"}))
+        rule_components.append(html.Br())
+
+    return [html.Div('You have selected:', style={"color": "black"}), html.Br()] + rule_components
+
+
+
+
+
+
+
 
 
 @app.callback(
@@ -832,16 +874,15 @@ def save_results(n_clicks, rules_slider, selected_rules, group_num, cluster_num)
         return html.Div("")
     kmeans_id = int(group_num.split(" ")[0])
     cluster_id = int(cluster_num[7:])
-    #cluster information
     cluster_info = "For %d clusters, cluster index %d is selected. \n" % (kmeans_id, cluster_id)
-    
+
     group0_anomaly = pd.read_csv('xpacs_offline/results/%s/cluster%d_idx%d_group_anomaly.txt' \
                                  %(dataset_name, kmeans_id, cluster_id),index_col = 0)
     group0_anomaly = group0_anomaly.reset_index()
     del group0_anomaly['index']
     normal_X = pd.read_csv('xpacs_offline/results/%s/normal_data.txt' % dataset_name)
     combined_rules = []
-    
+
     for child in selected_rules:
         feat = (child["props"]["children"][0]["props"]["children"][0].replace(" ", ""))
         id = FEAT_NAME.index(feat)
@@ -850,9 +891,8 @@ def save_results(n_clicks, rules_slider, selected_rules, group_num, cluster_num)
             combined_rules.append((id, (interval[0], interval[1])))
         else:
             combined_rules.append((id, (interval, interval)))
-    
+
     for child in rules_slider:
-        #print(child)
         feat = (child["props"]["children"][0]["props"]["children"][0].replace(" ", ""))
         id = FEAT_NAME.index(feat)
         interval = child["props"]["children"][1]["props"]["value"]
@@ -861,28 +901,41 @@ def save_results(n_clicks, rules_slider, selected_rules, group_num, cluster_num)
         else:
             combined_rules.append((id, (interval, interval)))
 
-    combined_rules = remove_redundant_candidates(combined_rules)
-    #print rule information
-    rules_str = ""
-    for i in combined_rules:
-        rule_str = "Feature "
-        rule_id = i[0]
-        rule_interval = (i[1][0],i[1][1])
-        if FEAT_NAME[rule_id] in cat_dim_lst:
-            new_rul = " is: %s." % rule_interval[0]
-            rule_str = rule_str + FEAT_NAME[rule_id] + new_rul
+    rules_dict = {}
+    for rule in combined_rules:
+        rule_id, rule_interval = rule
+        feature_name = FEAT_NAME[rule_id]
+
+        if feature_name not in rules_dict:
+            rules_dict[feature_name] = [rule_interval]
         else:
-            new_rul = " between: %.3f and %.3f." % (rule_interval[0], rule_interval[1])
-            rule_str = rule_str + FEAT_NAME[rule_id] + new_rul
-        rules_str = rules_str + rule_str
+            rules_dict[feature_name].append(rule_interval)
+
+    rules_str = ""
+    for feature_name, intervals in rules_dict.items():
+        rule_str = "Feature " + feature_name
+        for i, interval in enumerate(intervals):
+            if feature_name in cat_dim_lst:
+                new_rul = " is: %s" % interval[0]
+            else:
+                new_rul = " between: %.3f and %.3f" % (interval[0], interval[1])
+
+            if i > 0:
+                new_rul = " or" + new_rul
+
+            rule_str += new_rul
+
+        rule_str += "."
+        rules_str += rule_str
+
     rules_str = rules_str + "\n"
-    
-    (mass, purity) = get_mass_purity(group0_anomaly, normal_X, combined_rules,FEAT_NAME,cat_dim_lst)
-    mass_purity_info ="Current COVERAGE: %.3f, Current PURITY:%.3f. \n" % (mass, purity)
-    
+
+    (mass, purity) = get_mass_purity(group0_anomaly, normal_X, combined_rules, FEAT_NAME, cat_dim_lst)
+    mass_purity_info = "Current COVERAGE: %.3f, Current PURITY:%.3f. \n" % (mass, purity)
+
     with open(output_file, "a+") as myfile:
-        myfile.write(cluster_info + rules_str + mass_purity_info +"\n")
-    
+        myfile.write(cluster_info + rules_str + mass_purity_info + "\n")
+
     return html.Div("Rules saved")
 
 
