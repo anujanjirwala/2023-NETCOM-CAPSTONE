@@ -3,3 +3,15 @@ For 7 clusters, cluster index 0 is selected.
 Feature idle_min between: 1.000 and 100.000 or between: 2000.000 and 4000.000.
 Current COVERAGE: 0.000, Current PURITY:1.000. 
 
+For 7 clusters, cluster index 0 is selected. 
+Feature idle_min between: 0.000 and 119448787.000 or between: 0.000 and 119448787.000 or between: 0.000 and 119448787.000.
+Current COVERAGE: 1.000, Current PURITY:0.005. 
+
+For 7 clusters, cluster index 0 is selected. 
+Feature idle_min between: 0.000 and 4000000.000 or between: 40000000.000 and 48000000.000 or between: 55000000.000 and 64000000.000.
+Current COVERAGE: 0.200, Current PURITY:0.002. 
+
+For 7 clusters, cluster index 0 is selected. 
+Feature idle_min between: 0.000 and 4000000.000 or between: 40000000.000 and 48000000.000 or between: 0.000 and 119448787.000.Feature idle_std between: 0.000 and 2500000.000 or between: 32500000.000 and 35886100.000.
+Current COVERAGE: 0.200, Current PURITY:0.002. 
+
