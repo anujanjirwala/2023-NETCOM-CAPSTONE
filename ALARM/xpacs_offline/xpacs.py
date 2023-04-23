@@ -13,7 +13,9 @@ import sys
 import os
 import json
 from sklearn.preprocessing import LabelEncoder
+import math
 
+count = 0
 
 #encode the categorical features to numbers with LabelEncoder
 def encode_catgorical_column(data):
@@ -49,12 +51,23 @@ def get_real_quantile_info(X,index, log_dens, percentage, X_max, X_min):
         if X_max[index] < X[i[1]][0]:
             right_val = X_max[index]
         true_threshold.append([(index,(left_val, right_val))])
-    #true_threshold = [[(index,(X[i[0]][0], X[i[1]][0]))] for i in threshold_indices]
     return true_threshold
 
 
 def get_cat_quantile_info(index,log_dens,mapping):
     return [[(index,(mapping[np.argmax(log_dens)],mapping[np.argmax(log_dens)]))]]
+
+def get_cat_quantile_info_multi(index,log_dens,mapping,percentage):
+    """
+    log_dens is the log density of all values in mapping
+    return the values in mapping whose density is over quantile(percentage)
+
+    Question: for categorical features, the density does not sum up to one. 
+    And the density are quite close. So 80% quantitle does not work here. Any suggestions?
+    """
+    threshold = np.exp(log_dens).max() * (percentage / 100)
+    categories = [category for category in mapping if np.exp(log_dens[list(mapping).index(category)]) >= threshold]
+    return [[(index, (categories[i], categories[i]))] for i in range(len(categories))]
 
 
 
@@ -90,6 +103,7 @@ def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_
         if index_names[index] in cat_idx_lst:
             is_cat = True
             new_X = deepcopy(group_anomaly[index_names[index]])
+            # print("new_X: ", new_X)
             new_X, encoder = encode_catgorical_column(new_X)
             labelencoders.append(encoder)
             hist = np.histogram(new_X, bins=len(group_anomaly[index_names[index]].unique()), density=True, weights=None)
@@ -100,7 +114,10 @@ def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_
                 plt.xticks(encoder.transform(encoder.classes_),encoder.classes_)
                 plt.show()
             log_dens = hist[0]
-            thresholds = get_cat_quantile_info(index,log_dens,encoder.classes_)
+            # print("hist: ", hist)
+            # thresholds = get_cat_quantile_info(index,log_dens,encoder.classes_)
+            thresholds = get_cat_quantile_info_multi(index,log_dens,encoder.classes_,quantile[0])
+            # print(thresholds)
             rules.extend(thresholds)
         else:
             is_cat = False
@@ -136,6 +153,7 @@ def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_
                            label = "%.2f" % (i/100)) 
                 thresholds = get_real_quantile_info(X_plot,index,log_dens,i, X_max, X_min)
                 rules.extend(thresholds)
+                # print(thresholds)
                 plt.show()
     return rules
 
@@ -194,11 +212,9 @@ def find_all_candidates(R_candidates, group_anomaly, normal_X, mu, ms,cat_idx_ls
     R = []
     feature_names = list(group_anomaly.columns)
     for repeat in range(rangeval):
-        print("Current dimension: ", repeat+1)
         R_pure = []
         R_non_pure =[]
         for cur_rul in R_candidates:
-            #print(cur_rul)
             anomaly_indx = anomaly_index_above_threshold(group_anomaly,cur_rul,feature_names, cat_idx_lst)
             normal_indx = anomaly_index_above_threshold(normal_X, cur_rul,feature_names, cat_idx_lst)
             mass = len(anomaly_indx) / anomaly_shape
@@ -209,7 +225,6 @@ def find_all_candidates(R_candidates, group_anomaly, normal_X, mu, ms,cat_idx_ls
             
             if mass >= ms:
                 if purity < mu:
-                    #print("MASS: %d, PURITY: %d" %(mass, purity))
                     R_pure.append(cur_rul)
                 else:
                     R_non_pure.append(cur_rul)
@@ -220,7 +235,6 @@ def find_all_candidates(R_candidates, group_anomaly, normal_X, mu, ms,cat_idx_ls
         if repeat < rangeval -1:
             R_candidates = generate_candidate(R_val, repeat)
             R_candidates = remove_redundant_candidates(R_candidates)
-        #print(len(R_candidates))
     final_R = remove_redundant_candidates(R)
     mass_purity_score =[]
     for i in final_R:
@@ -336,7 +350,6 @@ def get_inference(all_result, X, feature_names=None):
   
     explain_ = [feat + "_ex" for feat in feature_names]     
 
-    #print(feature_names)
     assert len(explain_) == len(feature_names)
     assert len(explain_) == len(list(X.columns))
     for i in explain_:
@@ -443,6 +456,7 @@ def main(file_path):
                                      ms= ms_percentage,
                                      cat_idx_lst =cat_dim_lst,
                                      anomaly_shape = group0_anomaly.shape[0])
+            print(candidates)
             with open('results/%s/cluster%d_idx%d_candidates.txt' %(dataset_name,cluster_number, cluster_id),'wb') as f:
                 pickle.dump(candidates, f)
                 
