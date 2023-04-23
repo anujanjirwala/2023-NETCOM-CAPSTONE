@@ -710,27 +710,38 @@ def rule_slider_maker(name, min_val, max_val, start, end, idx, wide=3):
                 id={"type": "dynamic-slider", "index": idx},
                 className=name,
             ),
-            dbc.Col(
+            dbc.Row(
                 [
-                    html.Span("Lower limit: "),
-                    dcc.Input(
-                        id={"type": "dynamic-lower-input", "index": idx},
-                        type="number",
-                        value=start,
-                        min=min_val,
-                        max=end,
+                    dbc.Col(
+                        [
+                            html.Span("Lower limit: "),
+                            dcc.Input(
+                                id={"type": "dynamic-lower-input", "index": idx},
+                                type="number",
+                                value=start,
+                                min=min_val,
+                                max=end,
+                            ),
+                        ],
+                        width=6,
                     ),
-                    html.Span("Upper limit: "),
-                    dcc.Input(
-                        id={"type": "dynamic-upper-input", "index": idx},
-                        type="number",
-                        value=end,
-                        min=start,
-                        max=max_val,
+                    dbc.Col(
+                        [
+                            html.Span("Upper limit: "),
+                            dcc.Input(
+                                id={"type": "dynamic-upper-input", "index": idx},
+                                type="number",
+                                value=end,
+                                min=start,
+                                max=max_val,
+                            ),
+                        ],
+                        width=6,
                     ),
                 ],
-                width=wide,
+                justify="between",
             ),
+
         ]
     )
 # Callback function to update bounds

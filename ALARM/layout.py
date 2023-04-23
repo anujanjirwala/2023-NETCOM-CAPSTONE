@@ -123,7 +123,6 @@ def layout(DASHBOARD_DATA):
                     "height": "10%",
                 },
             ),
-             
             dbc.Row(
                 [
                      # Scatter Plot
@@ -165,7 +164,21 @@ def layout(DASHBOARD_DATA):
                         ],
                         width=5,
                     ),
-                     ##Rule mining and RDI
+                ],
+                justify="center",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
+                },
+                
+            ),
+            
+            html.Br(),
+            dbc.Row(
+                [
+                    ##Rule mining and RDI
                     dbc.Col(
                         [
                             html.I(
@@ -223,6 +236,11 @@ def layout(DASHBOARD_DATA):
                                     ]
                                 )
                             ),
+                        ],
+                        width=5,
+                    ),
+                    dbc.Col(
+                        [
                             html.Div(
                                 [
                                     html.I(
@@ -291,10 +309,10 @@ def layout(DASHBOARD_DATA):
                             ),
                             html.Button("Add Predicates", id="submit-val", n_clicks=0),
                             html.Button(
-                                            "Or",
-                                            id={"type": "dynamic-or-button", "index": "feature_dropdown"},
-                                            n_clicks=0,
-                                        ),
+                                "Or",
+                                id={"type": "dynamic-or-button", "index": "feature_dropdown"},
+                                n_clicks=0,
+                            ),
                             html.Div(id="rules_slider", children=[]),
                             html.Button(
                                 "Calculate Scores", id="score_button", n_clicks=0),
@@ -312,10 +330,7 @@ def layout(DASHBOARD_DATA):
                     "padding": "5px",
                     "height": "5%",
                 },
-                
             ),
-           
-            
             html.Br(),
             #Histogram
             dbc.Row(
@@ -381,6 +396,7 @@ def layout(DASHBOARD_DATA):
                         ],
                         width=5,
                     ),
+                    #Density Plot
                     dbc.Col(
                         [
                             html.Div(
@@ -475,7 +491,6 @@ def layout(DASHBOARD_DATA):
                 
             ),
             html.Br(),
-            #Density plot
             dbc.Row(
                 [
                          
@@ -488,7 +503,6 @@ def layout(DASHBOARD_DATA):
                     "height": "5%",
                 },
             ),
-            html.Br(),
             #Parallel plot
             dbc.Row(
                 [
