@@ -693,6 +693,8 @@ def rule_slider_maker(name, min_val, max_val, start, end, idx, wide=3):
                         "Delete",
                         id={"type": "dynamic-button", "index": idx},
                         n_clicks=0,
+                        style={"margin-top": "10px",
+                               "margin-bottom": "5px"}
                     ),
                 ],
                 width=wide,

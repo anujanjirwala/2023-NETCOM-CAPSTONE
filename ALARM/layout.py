@@ -218,11 +218,13 @@ def layout(DASHBOARD_DATA):
                                 id="mass_input",
                                 type="number",
                                 placeholder="COVERAGE",
+                                style={"margin-right": "10px"}
                             ),
                             dcc.Input(
                                 id="purity_input",
                                 type="number",
                                 placeholder="PURITY",
+                                style={"margin-right": "10px"}
                             ),
                             html.Button("Show Rules", id="submit-rules", n_clicks=0),
                             dbc.Card(
@@ -234,7 +236,8 @@ def layout(DASHBOARD_DATA):
                                         ),
                                         html.Div(id="rules", children=[]),
                                     ]
-                                )
+                                ),
+                            style = {"margin-top": "10px"}
                             ),
                         ],
                         width=5,
@@ -282,7 +285,8 @@ def layout(DASHBOARD_DATA):
                                     [
                                         html.Div(
                                             "Selected Rules",
-                                            style={"textAlign": "center"},
+                                            style={"textAlign": "center",
+                                                   "margin-top": "20px"},
                                         ),
                                         html.Div(id="output-container-range-slider"),
                                         html.Div(id="selected_rule", children=[]),
@@ -302,23 +306,28 @@ def layout(DASHBOARD_DATA):
                                         style={
                                             "width": "50%",
                                             "offset": 1,
+                                            "margin-top": "5px",
                                         },
                                         clearable=False,
                                     ),
                                 ]
                             ),
-                            html.Button("Add Predicates", id="submit-val", n_clicks=0),
+                            html.Button("Add Predicates", id="submit-val", n_clicks=0, style={"margin-top": "5px", "margin-right": "10px"}),
                             html.Button(
                                 "Or",
                                 id={"type": "dynamic-or-button", "index": "feature_dropdown"},
                                 n_clicks=0,
                             ),
                             html.Div(id="rules_slider", children=[]),
-                            html.Button(
-                                "Calculate Scores", id="score_button", n_clicks=0),
-                            html.Div(id="scores", children=[]),
-                            html.Button("Save rules", id= "save_rules", n_clicks = 0),
-                            html.Div(id="saved", children = [])
+                            html.Div([html.Button("Calculate Scores", id="score_button", n_clicks=0),
+                                      html.Div(id="scores", children=[],
+                                               style={"display": "inline-block", "margin-left": "10px", "margin-top": "15px"})
+                                      ], style={"display": "flex", "align-items": "center"}),
+                            html.Div([html.Button("Save rules", id="save_rules", n_clicks=0),
+                                      html.Div(id="saved", children=[],
+                                               style={"display": "inline-block", "margin-left": "10px", "margin-top": "10px"})
+                                      ], style={"display": "flex", "align-items": "center"})
+
                         ],
                         width=5,
                     ),
@@ -382,6 +391,7 @@ def layout(DASHBOARD_DATA):
                                         style={
                                             "width": "70%",
                                             "offset": 1,
+                                            "margin-top": "10px"
                                         },
                                     ),
                                     dcc.Graph(id="histogram"),
@@ -447,6 +457,9 @@ def layout(DASHBOARD_DATA):
                                                         ],
                                                         id="dropdown_density1",
                                                         clearable=False,
+                                                        style={
+                                                            "margin-top": "10px"
+                                                        }
                                                     )
                                                 ]
                                             ),
@@ -462,6 +475,9 @@ def layout(DASHBOARD_DATA):
                                                         ],
                                                         id="dropdown_density2",
                                                         clearable=False,
+                                                        style={
+                                                            "margin-top": "10px"
+                                                        }
                                                     ),
                                                 ]
                                             ),
