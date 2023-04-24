@@ -71,22 +71,36 @@ def get_cat_quantile_info_multi(index,log_dens,mapping,percentage):
 
 
 
-def anomaly_index_above_threshold(X,threshold,feature_names,cat_idx_lst):
+import numpy as np
+
+def anomaly_index_above_threshold(X, threshold, feature_names, cat_idx_lst):
     anomaly_indices = {}
-    for index,thres in threshold:
+    for index, *intervals in threshold:
         if index not in anomaly_indices.keys():    
             if feature_names[index] not in cat_idx_lst:
-                anomaly_indices[index] = (np.where((X[feature_names[index]] >= thres[0]) &\
-                                                   (X[feature_names[index]] <= thres[1]))[0].tolist())    
+                combined_indices = []
+                for interval in intervals:
+                    lower_bound, upper_bound = interval
+                    indices = np.where((X[feature_names[index]] >= lower_bound) &\
+                                       (X[feature_names[index]] <= upper_bound))[0].tolist()
+                    combined_indices.extend(indices)
+                anomaly_indices[index] = list(set(combined_indices))
             else:
-                anomaly_indices[index] = X.index[X[feature_names[index]] == thres[0]].tolist()
+                combined_indices = []
+                for value in intervals:
+                    indices = X.index[X[feature_names[index]] == value].tolist()
+                    combined_indices.extend(indices)
+                anomaly_indices[index] = list(set(combined_indices))
+
     ads = list(anomaly_indices.values())
+    print("ads is " + str(ads))
     if ads == []:
         return []
-    elif len(ads)> 1:
-        return list(set(ads[0]).intersection(*ads))
     else:
-        return ads[0]
+        # Return the union of all the lists as a single list
+        return list(set().union(*ads))
+
+
 
 
 def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_show = False):
