@@ -56,21 +56,36 @@ def get_real_quantile_info(X,index, log_dens, percentage, X_max, X_min):
 def get_cat_quantile_info(index,log_dens,mapping):
     return [[(index,(mapping[np.argmax(log_dens)],mapping[np.argmax(log_dens)]))]]
 
+def get_cat_quantile_info_multi(index, log_dens, mapping, percentage):
+    """
+    log_dens is the log density of all values in mapping
+    return the values in mapping whose density is over quantile(percentage)
+    Question: for categorical features, the density does not sum up to one.
+    And the density are quite close. So 80% quantile does not work here. Any suggestions?
+    """
+    threshold = np.exp(log_dens).max() * (percentage / 100)
+    categories = [category for category in mapping if np.exp(log_dens[list(mapping).index(category)]) >= threshold]
+    return [[(index, (categories[i], categories[i]))] for i in range(len(categories))]
 
-
-def anomaly_index_above_threshold(X,threshold,feature_names,cat_idx_lst):
+def anomaly_index_above_threshold(X, threshold, feature_names, cat_idx_lst):
     anomaly_indices = {}
-    for index,thres in threshold:
-        if index not in anomaly_indices.keys():    
+    for index, thres in threshold:
+        if index not in anomaly_indices.keys():
             if feature_names[index] not in cat_idx_lst:
-                anomaly_indices[index] = (np.where((X[feature_names[index]] >= thres[0]) &\
-                                                   (X[feature_names[index]] <= thres[1]))[0].tolist())    
+                anomaly_indices[index] = (np.where((X[feature_names[index]] >= thres[0]) & \
+                                                   (X[feature_names[index]] <= thres[1]))[0].tolist())
             else:
                 anomaly_indices[index] = X.index[X[feature_names[index]] == thres[0]].tolist()
+        else:
+            if feature_names[index] not in cat_idx_lst:
+                anomaly_indices[index].extend((np.where((X[feature_names[index]] >= thres[0]) & \
+                                                   (X[feature_names[index]] <= thres[1]))[0].tolist()))
+            else:
+                anomaly_indices[index].extend(X.index[X[feature_names[index]] == thres[0]].tolist())
     ads = list(anomaly_indices.values())
     if ads == []:
         return []
-    elif len(ads)> 1:
+    elif len(ads) > 1:
         return list(set(ads[0]).intersection(*ads))
     else:
         return ads[0]
@@ -100,7 +115,8 @@ def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_
                 plt.xticks(encoder.transform(encoder.classes_),encoder.classes_)
                 plt.show()
             log_dens = hist[0]
-            thresholds = get_cat_quantile_info(index,log_dens,encoder.classes_)
+            # thresholds = get_cat_quantile_info(index,log_dens,encoder.classes_)
+            thresholds = get_cat_quantile_info_multi(index, log_dens, encoder.classes_, quantile[0])
             rules.extend(thresholds)
         else:
             is_cat = False
@@ -143,11 +159,11 @@ def find_hyper_rectangles(index_lst,group_anomaly, X_max, X_min, cat_idx_lst,is_
 def generate_candidate(R_val, repeat):
     R_candidate = R_val
     all_possible_R_lst = []
-    for possible_R in itertools.combinations(R_candidate, repeat+2):
-        first_threshold = possible_R[0]
-        for i in range(1,len(possible_R)):
-            first_threshold = merge_thresholds(first_threshold, possible_R[i])
-        all_possible_R_lst.append(first_threshold)
+    for possible_R in itertools.combinations(R_candidate, repeat + 2):
+        possible_R_list = []
+        for i in range(0, len(possible_R)):
+            possible_R_list.append(possible_R[i][0])
+        all_possible_R_lst.append(possible_R_list)
     return all_possible_R_lst
 
 

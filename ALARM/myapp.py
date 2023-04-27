@@ -40,7 +40,7 @@ class Parameters():
         self.output_file = json_["output_file"][3:]
         self.has_label = json_["has_label"]
 
-parameters = Parameters("parameters.json")
+parameters = Parameters("pkdd1998_parameters.json")
 #feature_names = None
 dataset_name = parameters.dataset_name
 output_file = parameters.output_file
