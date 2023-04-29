@@ -16,6 +16,7 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import os
 from dash import callback_context
+from collections import defaultdict
 
 from copy import deepcopy
 from myapp import *
@@ -683,6 +684,8 @@ def rule_slider_maker(name, min_val, max_val, start, end):
                         "Delete",
                         id={"type": "dynamic-button", "index": name.replace(" ", "")},
                         n_clicks=0,
+                        style={"margin-top" : "5px",
+                               "margin-bottom" : "5px"}
                     ),
                 ],
                 width=3,
@@ -713,6 +716,8 @@ def rule_dropdown_maker(name, selected_val, all_vals):
                         "Delete",
                         id={"type": "dynamic-button", "index": name.replace(" ", "")},
                         n_clicks=0,
+                        style={"margin-top": "5px",
+                               "margin-bottom": "5px"}
                     ),
                 ],
                 width=3,
@@ -736,34 +741,38 @@ def rule_dropdown_maker(name, selected_val, all_vals):
 
 @app.callback(
     Output("output-container-range-slider", "children"),
-    Input({"type": "dynamic-slider","index": dash.ALL}, "id"), 
     Input({"type": "dynamic-slider", "index": dash.ALL}, "value"),
-    Input({"type": "dynamic-dropdown","index": dash.ALL}, "id"), 
-    Input({"type": "dynamic-dropdown","index": dash.ALL}, "value"),
-  
+    Input({"type": "dynamic-dropdown", "index": dash.ALL}, "value"),
+    State({"type": "dynamic-slider", "index": dash.ALL}, "id"),
+    State({"type": "dynamic-slider", "index": dash.ALL}, "className"),
+    State({"type": "dynamic-dropdown", "index": dash.ALL}, "id"),
 )
-def update_output(feat1,value1,feat2, value2,):
-    updated_str = ""
-    
-    #print real-valued features and values
-    for i in range(len(value1)):
-        rule_str = "Feature "
-        feature  =  feat1[i]["index"].upper()
-        #print(feature)
-        new_rul = " between: %.3f and %.3f." % (value1[i][0], value1[i][1])
-        rule_str = rule_str + feature + new_rul
-        updated_str = updated_str + rule_str
-      
-    #print categorical features and values
-    for i in range(len(value2)):
-        rule_str = "Feature "
-        feature = feat2[i]["index"].upper()
-        #print(feature)
-        new_rul = " is: %s." % value2[i]
-        rule_str = rule_str + feature + new_rul
-        updated_str = updated_str + rule_str
-        
-    return 'You have selected: "' + updated_str + '"'
+
+
+def update_output(slider_values, dropdown_values, slider_ids, slider_names, dropdown_ids):
+    rule_components = []
+    rule_dict = defaultdict(list)
+
+    # Group real-valued features and values
+    for slider_id, slider_value, slider_name in zip(slider_ids, slider_values, slider_names):
+        slider_name = slider_id['index']
+        rule_dict[slider_name].append("between: %.3f and %.3f" % (slider_value[0], slider_value[1]))
+
+    # Group categorical features and values
+    for dropdown_id, dropdown_value in zip(dropdown_ids, dropdown_values):
+        #print(dropdown_id["index"])
+        feature = dropdown_id["index"].replace(" ", "")
+        rule_dict[feature].append("is: %s" % dropdown_value)
+
+    # Combine the rules with "or"
+    for feature, rules in rule_dict.items():
+        #print(feature , rules)
+        rule_str = "Feature " + feature + " " + " or ".join(rules) + "."
+        rule_components.append(html.Span(rule_str, style={"color": "red"}))
+        rule_components.append(html.Br())
+
+    return [html.Div('You have selected:', style={"color": "black"}), html.Br()] + rule_components
+
 
     # callbacks
 
