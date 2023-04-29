@@ -235,7 +235,7 @@ def update_density(selected_k, cluster_number, density_feature_x, density_featur
 Call back for the parallel plot
   Input: selected_K: dropdown-specify the number of clusters
          cluster_number: dropdown-specify the cluster_idx in the clusters
-         delected_feautres: a list of featurs to show in parallel plot 
+         selected_features: a list of features to show in parallel plot 
   Output: parallel
 """
 @app.callback(
@@ -298,7 +298,7 @@ def dynamic_control_maker(val):
 
 """
 Call back to update the number of features and each feature selection in the parallel plots
-Input: num_parallel_features: number of features in the aprallel plot
+Input: num_parallel_features: number of features in the parallel plot
        children: dropdown options before updates
 Output: dropdown options after the updates (the features are added using dynamic_control_maker function)
 """
@@ -387,7 +387,8 @@ def update_rules(feature1, feature2, selected_rule, children):
                 new_children = []
                 for child in children:
                     #print(child["props"]["children"][0]["props"]["children"][0].replace(" ",""))
-                    if child["props"]["children"][0]["props"]["children"][0].replace(" ","") != idx:
+                    #if child["props"]["children"][0]["props"]["children"][0].replace(" ","") != idx:
+                    if child["props"].get("id") and child["props"]["id"]["index"] != idx:
                         new_children.append(child)
                 children = new_children
                 #print("new children")
@@ -456,9 +457,10 @@ def calculate_scores(n_clicks, rules_slider, selected_rules, group_num, cluster_
             combined_rules.append((id, (interval, interval)))
     
     #print("combined_rules")
-    #print(combined_rules)     
+    #print(combined_rules)
    
     #print("rule_slider")
+    #print(rules_slider)
     for child in rules_slider:
         #print(child)
         feat = (child["props"]["children"][0]["props"]["children"][0].replace(" ", ""))
@@ -470,7 +472,9 @@ def calculate_scores(n_clicks, rules_slider, selected_rules, group_num, cluster_
             combined_rules.append((id, (interval, interval)))
     #print("total rules!")
     #print(combined_rules)
-    combined_rules = remove_redundant_candidates(combined_rules)
+    #combined_rules = remove_redundant_candidates(combined_rules)
+    #print("after remove redundant")
+    #print(combined_rules)
     (mass, purity) = get_mass_purity(group0_anomaly, normal_X, combined_rules,FEAT_NAME,cat_dim_lst)
     return html.Div("Current COVERAGE: %.3f, Current PURITY:%.3f " % (mass, purity))
 
@@ -601,7 +605,7 @@ def update_rule_candidates1(feature1, feature2, children1, children2):
         button_str_lst = button_str_lst[1].split(":")
         if len(button_str_lst) > 1:
             button_type = button_str_lst[1]
-    
+    #print("button type", button_type)
     
     if "dynamic-select-button" in button_type:
         index = trigger["prop_id"].split(",")[0].split(":")[1].replace('"', "")
@@ -836,7 +840,6 @@ def save_results(n_clicks, rules_slider, selected_rules, group_num, cluster_num)
             combined_rules.append((id, (interval[0], interval[1])))
         else:
             combined_rules.append((id, (interval, interval)))
-
     combined_rules = remove_redundant_candidates(combined_rules)
     #print rule information
     rules_str = ""

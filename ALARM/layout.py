@@ -70,7 +70,7 @@ def layout(DASHBOARD_DATA):
         children=[
             # header
             html.Br(),
-            # first row
+            # Number of anomaly groups and Cluster number
             dbc.Row(
                 [
                     dbc.Col(
@@ -92,28 +92,7 @@ def layout(DASHBOARD_DATA):
                                 ),
                             ]
                         ),
-                        width=5,
-                    ),
-                    dbc.Col(
-                        html.Div(
-                            [
-                                "Cluster Number: ",
-                                dcc.Dropdown(
-                                    options=[
-                                        {"label": i, "value": i}
-                                        for i in DASHBOARD_DATA.cluster_options[-1]
-                                    ],
-                                    value="cluster0",
-                                    id="cluster_dropdown",
-                                    style={
-                                        "width": "60%",
-                                        "offset": 1,
-                                    },
-                                    clearable=False,
-                                ),
-                            ]
-                        ),
-                        width=7,
+                        width={"size": 5, "order": 1, "offset": 1},
                     ),
                 ],
                 style={
@@ -125,6 +104,7 @@ def layout(DASHBOARD_DATA):
             ),
             dbc.Row(
                 [
+                    # Scatter Plot
                     dbc.Col(
                         [
                             html.I(
@@ -163,8 +143,41 @@ def layout(DASHBOARD_DATA):
                         ],
                         width=5,
                     ),
+                ],
+                justify="center",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
+                },
+            ),
+
+            html.Br(),
+            dbc.Row(
+                [
+                    ##Rule mining and RDI
                     dbc.Col(
                         [
+                            html.Div(
+                                [
+                                    "Cluster Number: ",
+                                    dcc.Dropdown(
+                                        options=[
+                                            {"label": i, "value": i}
+                                            for i in DASHBOARD_DATA.cluster_options[-1]
+                                        ],
+                                        value="cluster0",
+                                        id="cluster_dropdown",
+                                        style={
+                                            "width": "50%",
+                                            "offset": 1,
+                                            "margin-bottom": "5px"
+                                        },
+                                        clearable=False,
+                                    ),
+                                ]
+                            ),
                             html.I(
                                 children=" ",
                                 style={
@@ -202,11 +215,13 @@ def layout(DASHBOARD_DATA):
                                 id="mass_input",
                                 type="number",
                                 placeholder="COVERAGE",
+                                style={"margin-right": "10px"}
                             ),
                             dcc.Input(
                                 id="purity_input",
                                 type="number",
                                 placeholder="PURITY",
+                                style={"margin-right": "10px"}
                             ),
                             html.Button("Show Rules", id="submit-rules", n_clicks=0),
                             dbc.Card(
@@ -218,10 +233,11 @@ def layout(DASHBOARD_DATA):
                                         ),
                                         html.Div(id="rules", children=[]),
                                     ]
-                                )
+                                ),
+                                style={"margin-top": "10px"}
                             ),
                         ],
-                        width=3,
+                        width=5,
                     ),
                     dbc.Col(
                         [
@@ -266,7 +282,8 @@ def layout(DASHBOARD_DATA):
                                     [
                                         html.Div(
                                             "Selected Rules",
-                                            style={"textAlign": "center"},
+                                            style={"textAlign": "center",
+                                                   "margin-top": "20px"},
                                         ),
                                         html.Div(id="output-container-range-slider"),
                                         html.Div(id="selected_rule", children=[]),
@@ -275,7 +292,7 @@ def layout(DASHBOARD_DATA):
                             ),
                             html.Div(
                                 [
-                                    "Feature Number: ",
+                                    "Features: ",
                                     dcc.Dropdown(
                                         options=[
                                             {"label": i, "value": i}
@@ -286,19 +303,28 @@ def layout(DASHBOARD_DATA):
                                         style={
                                             "width": "50%",
                                             "offset": 1,
+                                            "margin-top": "5px",
                                         },
                                         clearable=False,
                                     ),
                                 ]
                             ),
-                            html.Button("Add Predicates", id="submit-val", n_clicks=0),
+                            html.Button("Add Predicates", id="submit-val", n_clicks=0,
+                                        style={"margin-top": "5px", "margin-right": "10px"}),
                             html.Div(id="rules_slider", children=[]),
-                            html.Button(
-                                "Calculate Scores", id="score_button", n_clicks=0),
-                            html.Div(id="scores", children=[]),
-                            html.Button("Save rules", id= "save_rules", n_clicks = 0),
-                            html.Div(id="saved", children = [])
+                            html.Div([html.Button("Calculate Scores", id="score_button", n_clicks=0),
+                                      html.Div(id="scores", children=[],
+                                               style={"display": "inline-block", "margin-left": "10px",
+                                                      "margin-top": "15px"})
+                                      ], style={"display": "flex", "align-items": "center"}),
+                            html.Div([html.Button("Save rules", id="save_rules", n_clicks=0),
+                                      html.Div(id="saved", children=[],
+                                               style={"display": "inline-block", "margin-left": "10px",
+                                                      "margin-top": "10px"})
+                                      ], style={"display": "flex", "align-items": "center"})
+
                         ],
+                        width=5,
                     ),
                 ],
                 justify="center",
@@ -310,6 +336,7 @@ def layout(DASHBOARD_DATA):
                 },
             ),
             html.Br(),
+            #Histogram
             dbc.Row(
                 [
                     dbc.Col(
@@ -359,6 +386,7 @@ def layout(DASHBOARD_DATA):
                                         style={
                                             "width": "70%",
                                             "offset": 1,
+                                            "margin-top": "10px"
                                         },
                                     ),
                                     dcc.Graph(id="histogram"),
@@ -371,8 +399,9 @@ def layout(DASHBOARD_DATA):
                                 },
                             )
                         ],
-                        width=4,
+                        width=5,
                     ),
+                    # Density Plot
                     dbc.Col(
                         [
                             html.Div(
@@ -423,6 +452,9 @@ def layout(DASHBOARD_DATA):
                                                         ],
                                                         id="dropdown_density1",
                                                         clearable=False,
+                                                        style={
+                                                            "margin-top": "10px"
+                                                        }
                                                     )
                                                 ]
                                             ),
@@ -438,6 +470,9 @@ def layout(DASHBOARD_DATA):
                                                         ],
                                                         id="dropdown_density2",
                                                         clearable=False,
+                                                        style={
+                                                            "margin-top": "10px"
+                                                        }
                                                     ),
                                                 ]
                                             ),
@@ -453,8 +488,34 @@ def layout(DASHBOARD_DATA):
                                 },
                             )
                         ],
-                        width=4,
+                        width=5,
                     ),
+                ],
+                justify="center",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
+                },
+
+            ),
+            html.Br(),
+            dbc.Row(
+                [
+
+                ],
+                justify="center",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
+                },
+            ),
+            # Parallel plot
+            dbc.Row(
+                [
                     dbc.Col(
                         [
                             html.Div(
@@ -536,14 +597,19 @@ def layout(DASHBOARD_DATA):
                                 },
                             )
                         ],
-                        width=4,
+                        width=10,
                     ),
                 ],
                 justify="center",
-                style={"height": "1%"},
-                align="end",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
+                },
             ),
             html.Br(),
+            #Lookout info
             dbc.Row(
                 [
                     dbc.Col(
@@ -598,7 +664,7 @@ def layout(DASHBOARD_DATA):
                                 ),
                             ]
                         ),
-                        width=2,
+                        width={"size": 5, "order": 1, "offset": 1},
                     ),
                     dbc.Col(
                         html.Div(
@@ -625,24 +691,39 @@ def layout(DASHBOARD_DATA):
                                 ),
                             ]
                         ),
-                        width=2,
+                        width={"size": 5, "order": 2, "offset": 1},
                     ),
-                ],
-                style={
-                    "background-color": "white",
-                    "border-radius": "15px",
-                    "padding": "5px",
-                },
-            ),
-            dbc.Row(
-                [
-                    html.Div(id="lookout", children=[]),
                 ],
                 justify="center",
                 style={
                     "background-color": "white",
                     "border-radius": "15px",
                     "padding": "5px",
+                    "height": "5%",
+                },
+            ),
+            # Lookout plots
+            # Lookout plots
+            dbc.Row(
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.Div(id="lookout", children=[]),
+                        ],
+                        style={
+                            "background-color": "white",
+                            "border-radius": "15px",
+                            "padding": "5px",
+                        },
+                    ),
+                    width=10,
+                ),
+                justify="center",
+                style={
+                    "background-color": "white",
+                    "border-radius": "15px",
+                    "padding": "5px",
+                    "height": "5%",
                 },
             ),
             modal,
